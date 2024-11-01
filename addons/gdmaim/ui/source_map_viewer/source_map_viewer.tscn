@@ -1,7 +1,7 @@
 [gd_scene load_steps=17 format=3 uid="uid://dqknu058384tm"]
 
-[ext_resource type="Script" path="res://addons/gdmaim/ui/source_map_viewer/source_map_viewer.gd" id="1_xfxdk"]
-[ext_resource type="PackedScene" uid="uid://crvfxjbaqfxn2" path="res://addons/gdmaim/ui/source_map_viewer/code_search.tscn" id="2_n0sd2"]
+[ext_resource type="Script" path="res://addons/gdmaim/addons/gdmaim/ui/source_map_viewer/source_map_viewer.gd" id="1_xfxdk"]
+[ext_resource type="PackedScene" uid="uid://crvfxjbaqfxn2" path="res://addons/gdmaim/addons/gdmaim/ui/source_map_viewer/code_search.tscn" id="2_n0sd2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6bkrx"]
 bg_color = Color(0.113725, 0.298039, 0.333333, 1)
@@ -443,6 +443,7 @@ caret_blink = true
 caret_multiple = false
 syntax_highlighter = SubResource("CodeHighlighter_tq3hv")
 highlight_all_occurrences = true
+highlight_current_line = true
 draw_tabs = true
 line_folding = true
 gutters_draw_executing_lines = true
@@ -552,7 +553,7 @@ always_on_top = true
 ok_button_text = "Open"
 file_mode = 0
 access = 2
-filters = PackedStringArray("*.gd.map")
+filters = PackedStringArray("*.map")
 use_native_dialog = true
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
