@@ -7,4 +7,4 @@ export_presets.cfg
 test_scripts/
 cache/
 # export.cfg
-# source_maps/
+source_maps/
