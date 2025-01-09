@@ -71,6 +71,18 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 		if !_inject_autoload:
 			push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
 	
+	if settings.autoload_exclusion_list:
+		var comma_separated_string : String = settings.autoload_exclusion_list
+		var autoload_exclusion_list : Array = Array(comma_separated_string.split(",")).map(func(item): return item.strip_edges())
+		for autoload in autoload_exclusion_list:
+			var file_path = _autoloads.keys()[_autoloads.values().find(autoload)]
+			if file_path.ends_with(".gd"):
+				var elm_names_to_lock = get_script_elements(file_path)
+				for elm_name in elm_names_to_lock:
+					_symbols.lock_symbol_name(elm_name)
+			else:
+				push_warning("path for %s not found", autoload)
+
 	# Gather built-in variant and global symbols
 	var builtins : Script = preload("builtins.gd")
 	for global in builtins.GLOBALS:
@@ -112,6 +124,79 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 			#class_data.base = StringName(_global_classes[class_data.base])
 	#class_cache.set_value("", "list", classes)
 	#_godot_data["res://.godot/global_script_class_cache.cfg"] = class_cache.encode_to_text().to_utf8_buffer()
+
+
+func get_script_elements(file_path: String, global_elements_only=true) -> Array:
+	var result = []
+	
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		print("Unable to open file:", file_path)
+		return result
+	
+	while not file.eof_reached():
+		var line
+		if global_elements_only:
+			line = file.get_line()
+		else:
+			line = file.get_line().strip_edges()
+
+		# Match function definitions
+		if line.begins_with("func "):
+			var function_name = line.split("(")[0].replace("func ", "").split(" ")[0].strip_edges()
+			result.append(function_name)
+		
+		# Match variable declarations
+		elif line.begins_with("var "):
+			var variable_name = line.split("=")[0].replace("var ", "").split(" ")[0].strip_edges()
+			result.append(variable_name)
+		
+		# Match constants
+		elif line.begins_with("const "):
+			var constant_name = line.split("=")[0].replace("const ", "").split(" ")[0].strip_edges()
+			result.append(constant_name)
+		
+		# Match signals
+		elif line.begins_with("signal "):
+			var signal_name = line.split("(")[0].replace("signal ", "").split(" ")[0].strip_edges()
+			result.append(signal_name)
+		
+		# Match enums
+		elif line.begins_with("enum ") or line.begins_with("enum{"):
+			var enum_parts = line.replace("enum ", "").split(",")
+			var enum_name = enum_parts[0].split("{")[0].strip_edges()
+			result.append(enum_name)
+			# Check if enum has inline elements
+			if len(enum_parts) > 1:
+				for i in enum_parts.size():
+					enum_parts[i] = remove_brackets_from_string(enum_parts[i]).strip_edges()
+				result.append_array(enum_parts)
+			else:
+				# Handle multi-line enums
+				var enum_elements = []
+				while not file.eof_reached():
+					var enum_line = file.get_line().strip_edges()
+					if enum_line == "}":
+						break
+					enum_elements.append(enum_line.split(",")[0].strip_edges().split("=")[0].strip_edges().split("#")[0].strip_edges())
+				result.append_array(enum_elements)
+	
+	file.close()
+	return result
+
+
+func remove_brackets_from_string(str):
+	var left_brace_idx = str.find("{")
+	var right_brace_idx = str.find("}")
+
+	# Remove everything to the left of `{` (including it), if it exists
+	if left_brace_idx != -1:
+		str = str.substr(left_brace_idx + 1)
+
+	# Remove everything to the right of `}` (including it), if it exists
+	if right_brace_idx != -1:
+		str = str.substr(0, right_brace_idx)
+	return str
 
 
 func _export_end() -> void:
