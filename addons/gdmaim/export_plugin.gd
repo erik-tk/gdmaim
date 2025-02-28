@@ -129,57 +129,111 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 func get_script_elements(file_path: String, global_elements_only=true) -> Array:
 	var result = []
 	
+	# Regex for public variables: after "var" and whitespace, the next character is NOT an underscore.
+	var public_var_regex := RegEx.new()
+	public_var_regex.compile("^\\s*var\\s+(?!_)(\\w+)")
+	# Regex for private variables: next character IS an underscore.
+	var private_var_regex := RegEx.new()
+	private_var_regex.compile("^\\s*var\\s+_(\\w+)")
+	
+	# Regex for public functions.
+	var public_func_regex := RegEx.new()
+	public_func_regex.compile("^\\s*func\\s+(?!_)(\\w+)")
+	# Regex for private functions.
+	var private_func_regex := RegEx.new()
+	private_func_regex.compile("^\\s*func\\s+_(\\w+)")
+	
+	# Regex for public constants.
+	var public_const_regex := RegEx.new()
+	public_const_regex.compile("^\\s*const\\s+(?!_)(\\w+)")
+	
+	# Regex for signals.
+	var signal_regex := RegEx.new()
+	signal_regex.compile("^\\s*signal\\s+(\\w+)")
+	
+	# Regex for enums.
+	var enum_regex := RegEx.new()
+	enum_regex.compile("^\\s*enum\\s+(\\w+)")
+	
 	var file = FileAccess.open(file_path, FileAccess.READ)
 	if not file:
 		print("Unable to open file:", file_path)
 		return result
 	
 	while not file.eof_reached():
-		var line
-		if global_elements_only:
-			line = file.get_line()
-		else:
-			line = file.get_line().strip_edges()
-
-		# Match function definitions
-		if line.begins_with("func "):
-			var function_name = line.split("(")[0].replace("func ", "").split(" ")[0].strip_edges()
-			result.append(function_name)
+		var line = file.get_line()
+		if not global_elements_only:
+			line = line.strip_edges()
 		
-		# Match variable declarations
-		elif line.begins_with("var "):
-			var variable_name = line.split("=")[0].replace("var ", "").split(" ")[0].strip_edges()
+		# Check for public variable declarations.
+		var regex_match = public_var_regex.search(line)
+		if regex_match:
+			var variable_name = regex_match.get_string(1)
 			result.append(variable_name)
+			continue
 		
-		# Match constants
-		elif line.begins_with("const "):
-			var constant_name = line.split("=")[0].replace("const ", "").split(" ")[0].strip_edges()
+		## Check for private variable declarations.
+		#regex_match = private_var_regex.search(line)
+		#if regex_match:
+			#var variable_name = regex_match.get_string(1)
+			## Handle private variables differently if needed.
+			#result.append("_" + variable_name)
+			#continue
+		
+		# Check for public function definitions.
+		regex_match = public_func_regex.search(line)
+		if regex_match:
+			var function_name = regex_match.get_string(1)
+			result.append(function_name)
+			continue
+		
+		## Check for private function definitions.
+		#regex_match = private_func_regex.search(line)
+		#if regex_match:
+			#var function_name = regex_match.get_string(1)
+			## Handle private functions differently if needed.
+			#result.append("_" + function_name)
+			#continue
+		
+		# Check for constant declarations.
+		regex_match = public_const_regex.search(line)
+		if regex_match:
+			var constant_name = regex_match.get_string(1)
 			result.append(constant_name)
+			continue
 		
-		# Match signals
-		elif line.begins_with("signal "):
-			var signal_name = line.split("(")[0].replace("signal ", "").split(" ")[0].strip_edges()
+		# Check for signal definitions.
+		regex_match = signal_regex.search(line)
+		if regex_match:
+			var signal_name = regex_match.get_string(1)
 			result.append(signal_name)
+			continue
 		
-		# Match enums
-		elif line.begins_with("enum ") or line.begins_with("enum{"):
-			var enum_parts = line.replace("enum ", "").split(",")
-			var enum_name = enum_parts[0].split("{")[0].strip_edges()
-			result.append(enum_name)
-			# Check if enum has inline elements
-			if len(enum_parts) > 1:
-				for i in enum_parts.size():
-					enum_parts[i] = remove_brackets_from_string(enum_parts[i]).strip_edges()
-				result.append_array(enum_parts)
-			else:
-				# Handle multi-line enums
-				var enum_elements = []
-				while not file.eof_reached():
-					var enum_line = file.get_line().strip_edges()
-					if enum_line == "}":
-						break
-					enum_elements.append(enum_line.split(",")[0].strip_edges().split("=")[0].strip_edges().split("#")[0].strip_edges())
-				result.append_array(enum_elements)
+		# Check for enum definitions.
+		regex_match = enum_regex.search(line)
+		if regex_match:
+			var enum_name = regex_match.get_string(1).strip_edges()
+			if enum_name != "":
+				result.append(enum_name) # Store the enum name if it exists
+
+			# Check for inline elements
+			if "{" in line:
+				var enum_parts = line.split("{")[1].split(",")
+				if len(enum_parts) > 1:
+					# Handle one-line enums
+					for i in range(enum_parts.size()):
+						enum_parts[i] = remove_brackets_from_string(enum_parts[i]).strip_edges()
+					result.append_array(enum_parts)
+				else:
+					# Handle multi-line enums
+					var enum_elements = []
+					while not file.eof_reached():
+						var enum_line = file.get_line().strip_edges()
+						if enum_line == "}":
+							break
+						enum_elements.append(enum_line.split(",")[0].strip_edges().split("=")[0].strip_edges().split("#")[0].strip_edges())
+					result.append_array(enum_elements)
+			continue
 	
 	file.close()
 	return result
