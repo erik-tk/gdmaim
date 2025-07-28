@@ -47,7 +47,7 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 		#_build_data_path(get_script().resource_path.get_base_dir() + "/cache")
 		push_warning("GDMaim: The project setting 'editor/export/convert_text_resources_to_binary' is enabled, but will be ignored during export.")
 	
-	if settings.symbol_seed == 0 and !settings.symbol_dynamic_seed:
+	if settings.symbol_seed == 0 and not (settings.symbol_dynamic_seed or settings.symbol_config_seed_enabled):
 		push_warning("GDMaim - The ID generation seed is still set to the default value of 0. Please choose another one.")
 	
 	var scripts : PackedStringArray = _get_files("res://", ".gd")
