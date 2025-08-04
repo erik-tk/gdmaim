@@ -26,6 +26,7 @@ var _res_obfuscators : Dictionary
 var _inject_autoload : String
 var _exported_script_count : int
 var _rgx : RegEx = null
+var _inject_source_map_name: bool
 
 
 func _get_name() -> String:
@@ -60,16 +61,20 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 	_symbols = SymbolTable.new(settings)
 	
 	_inject_autoload = ""
-	if settings.source_map_inject_name:
-		var cfg : ConfigFile = ConfigFile.new()
-		cfg.load("res://project.godot")
-		for autoload : String in (cfg.get_section_keys("autoload") if cfg.has_section("autoload") else []):
-			_autoloads[cfg.get_value("autoload", autoload).replace("*", "")] = autoload
-			if !_inject_autoload and cfg.get_value("autoload", autoload).begins_with("*"):
-				_inject_autoload = cfg.get_value("autoload", autoload).replace("*", "")
-			_symbols.lock_symbol_name(autoload)
-		if !_inject_autoload:
-			push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
+	_inject_source_map_name = (
+		(is_debug and settings.source_map_inject_name_debug) 
+		or (not is_debug and settings.source_map_inject_name_release)
+	)
+	#if _inject_source_map_name:
+	var cfg : ConfigFile = ConfigFile.new()
+	cfg.load("res://project.godot")
+	for autoload : String in (cfg.get_section_keys("autoload") if cfg.has_section("autoload") else []):
+		_autoloads[cfg.get_value("autoload", autoload).replace("*", "")] = autoload
+		if !_inject_autoload and cfg.get_value("autoload", autoload).begins_with("*"):
+			_inject_autoload = cfg.get_value("autoload", autoload).replace("*", "")
+		_symbols.lock_symbol_name(autoload)
+	if !_inject_autoload:
+		push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
 	
 	if settings.autoload_exclusion_list:
 		var comma_separated_string : String = settings.autoload_exclusion_list
@@ -427,8 +432,8 @@ func _obfuscate_script(path : String) -> String:
 	obfuscator.run(_features)
 	
 	# Inject startup code into the first autoload
-	if path == _inject_autoload:
-		var injection_code : String = 'print("GDMaim - Source map \'' + _source_map_filename + '\'\\n");'
+	if _inject_source_map_name and path == _inject_autoload:
+		var injection_code : String = 'print("GDMaim - Source map \'' + _source_map_filename + '\'\");'
 		var did_inject : bool = false
 		
 		var found_func : bool = false

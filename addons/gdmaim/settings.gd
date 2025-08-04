@@ -28,7 +28,8 @@ var autoload_exclusion_list : String = ""
 var source_map_path : String = get_script().resource_path.get_base_dir() + "/source_maps"
 var source_map_max_files : int = 10
 var source_map_compress : bool = true
-var source_map_inject_name : bool = true
+var source_map_inject_name_debug : bool = true
+var source_map_inject_name_release : bool = false
 var debug_scripts : PackedStringArray
 var debug_resources : PackedStringArray
 var obfuscate_debug_only : bool = false
@@ -76,7 +77,8 @@ func _init() -> void:
 	add_entry("source_map_path", "filepath", "Output Path", "Source maps will get saved to this path upon export.")
 	add_entry("source_map_max_files", "max_files", "Max Files", "Sets the maximum amount of source map files allowed.")
 	add_entry("source_map_compress", "compress", "Compress", "If true, source maps will be compressed upon export.")
-	add_entry("source_map_inject_name", "inject_name", "Inject Name", "If true, upon export, injects a print statement of the associated source map's filename into the first enabled autoload. This does not affect your source code. Makes selecting the right source map very easy, when a player/user reports an error and shares their logfile.")
+	add_entry("source_map_inject_name_debug", "inject_name_debug", "Inject Name (Debug)", "If true, inject a print statement with the source map filename into the first enabled autoload on debug builds.")
+	add_entry("source_map_inject_name_release", "inject_name_release", "Inject Name (Release)", "If true, inject a print statement with the source map filename into the first enabled autoload on release builds.")
 	
 	#set_category("debug", "Debug")
 	#add_entry("debug_scripts", debug_scripts", "", "")
