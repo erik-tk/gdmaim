@@ -21,7 +21,10 @@ var _unique_ids : Dictionary
 
 func _init(settings : _Settings) -> void:
 	self.settings = settings
-	_seed = hash(str(settings.symbol_seed if !settings.symbol_dynamic_seed else int(Time.get_unix_time_from_system())))
+	if settings.symbol_config_seed_enabled:
+		_seed = hash(str(settings.get_config_seed()))
+	else:
+		_seed = hash(str(settings.symbol_seed if !settings.symbol_dynamic_seed else int(Time.get_unix_time_from_system())))
 
 
 func lock_symbol_name(name : String) -> void:
