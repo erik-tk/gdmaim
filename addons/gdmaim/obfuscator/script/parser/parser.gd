@@ -200,7 +200,7 @@ func _parse_symbol_path(ast_node : AST.ASTNode) -> SymbolTable.SymbolPath:
 	path.maybe_local = !_tokenizer.peek(0) or !_tokenizer.peek(0).is_punctuator(".")
 	path.set_log(_Logger.current_log)
 	path.line = _tokenizer.peek().line
-	
+
 	while !_tokenizer.is_eof():
 		var token : Token = _tokenizer.peek()
 		if token.is_punctuator(".") or token.is_punctuator(","):
@@ -212,8 +212,17 @@ func _parse_symbol_path(ast_node : AST.ASTNode) -> SymbolTable.SymbolPath:
 			token.link_symbol(symbol)
 			continue
 		break
-	
+
 	path.is_call = _tokenizer.peek().is_punctuator("(")
+
+	var comma_separated_string : String = _symbol_table.settings.excluded_namespaces
+	var excluded_namespaces : Array = Array(comma_separated_string.split(",")).map(func(item): return item.strip_edges())
+	for prefix in excluded_namespaces:
+		var symbols = path.symbols # e.g. [object_name, func_name] from function call object_name.func_name()
+		if symbols[0]._to_string() == prefix: # check if function call starts with object_name to exclude
+			for symbol in symbols:
+				_symbol_table.lock_symbol(symbol)
+			break
 	
 	return path
 

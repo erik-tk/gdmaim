@@ -30,6 +30,7 @@ var _res_obfuscators : Dictionary
 var _inject_autoload : String
 var _exported_script_count : int
 var _rgx : RegEx = null
+var _inject_source_map_name: bool
 var _godot_files : GodotFiles
 var _compiler
 var _compress_mode : int
@@ -71,7 +72,7 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 		#_build_data_path(get_script().resource_path.get_base_dir() + "/cache")
 		push_warning("GDMaim: The project setting 'editor/export/convert_text_resources_to_binary' is enabled, but will be ignored during export.")
 	
-	if settings.symbol_seed == 0 and !settings.symbol_dynamic_seed:
+	if settings.symbol_seed == 0 and not (settings.symbol_dynamic_seed or settings.symbol_config_seed_enabled):
 		push_warning("GDMaim - The ID generation seed is still set to the default value of 0. Please choose another one.")
 	
 	var scripts : PackedStringArray = _get_files("res://", ".gd")
@@ -84,7 +85,11 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 	_symbols = SymbolTable.new(settings)
 	
 	_inject_autoload = ""
-	if settings.source_map_inject_name:
+	_inject_source_map_name = (
+		(is_debug and settings.source_map_inject_name_debug) 
+		or (not is_debug and settings.source_map_inject_name_release)
+	)
+	if _inject_source_map_name:
 		var cfg : ConfigFile = ConfigFile.new()
 		cfg.load("res://project.godot")
 		for autoload : String in (cfg.get_section_keys("autoload") if cfg.has_section("autoload") else []):
@@ -95,6 +100,18 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 		if !_inject_autoload:
 			push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
 	
+	if settings.autoload_exclusion_list:
+		var comma_separated_string : String = settings.autoload_exclusion_list
+		var autoload_exclusion_list : Array = Array(comma_separated_string.split(",")).map(func(item): return item.strip_edges())
+		for autoload in autoload_exclusion_list:
+			var file_path = _autoloads.keys()[_autoloads.values().find(autoload)]
+			if file_path.ends_with(".gd"):
+				var elm_names_to_lock = get_script_elements(file_path)
+				for elm_name in elm_names_to_lock:
+					_symbols.lock_symbol_name(elm_name)
+			else:
+				push_warning("path for %s not found", autoload)
+
 	# Gather built-in variant and global symbols
 	var builtins : Script = preload("builtins.gd")
 	for global in builtins.GLOBALS:
@@ -163,6 +180,133 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 	
 	# Apply changes made to Godot's internal export files
 	_godot_files.flush()
+
+
+func get_script_elements(file_path: String, global_elements_only=true) -> Array:
+	var result = []
+	
+	# Regex for public variables: after "var" and whitespace, the next character is NOT an underscore.
+	var public_var_regex := RegEx.new()
+	public_var_regex.compile("^\\s*var\\s+(?!_)(\\w+)")
+	# Regex for private variables: next character IS an underscore.
+	var private_var_regex := RegEx.new()
+	private_var_regex.compile("^\\s*var\\s+_(\\w+)")
+	
+	# Regex for public functions.
+	var public_func_regex := RegEx.new()
+	public_func_regex.compile("^\\s*func\\s+(?!_)(\\w+)")
+	# Regex for private functions.
+	var private_func_regex := RegEx.new()
+	private_func_regex.compile("^\\s*func\\s+_(\\w+)")
+	
+	# Regex for public constants.
+	var public_const_regex := RegEx.new()
+	public_const_regex.compile("^\\s*const\\s+(?!_)(\\w+)")
+	
+	# Regex for signals.
+	var signal_regex := RegEx.new()
+	signal_regex.compile("^\\s*signal\\s+(\\w+)")
+	
+	# Regex for enums.
+	var enum_regex := RegEx.new()
+	enum_regex.compile("^\\s*enum\\s+(\\w+)")
+	
+	var file = FileAccess.open(file_path, FileAccess.READ)
+	if not file:
+		print("Unable to open file:", file_path)
+		return result
+	
+	while not file.eof_reached():
+		var line = file.get_line()
+		if not global_elements_only:
+			line = line.strip_edges()
+		
+		# Check for public variable declarations.
+		var regex_match = public_var_regex.search(line)
+		if regex_match:
+			var variable_name = regex_match.get_string(1)
+			result.append(variable_name)
+			continue
+		
+		## Check for private variable declarations.
+		#regex_match = private_var_regex.search(line)
+		#if regex_match:
+			#var variable_name = regex_match.get_string(1)
+			## Handle private variables differently if needed.
+			#result.append("_" + variable_name)
+			#continue
+		
+		# Check for public function definitions.
+		regex_match = public_func_regex.search(line)
+		if regex_match:
+			var function_name = regex_match.get_string(1)
+			result.append(function_name)
+			continue
+		
+		## Check for private function definitions.
+		#regex_match = private_func_regex.search(line)
+		#if regex_match:
+			#var function_name = regex_match.get_string(1)
+			## Handle private functions differently if needed.
+			#result.append("_" + function_name)
+			#continue
+		
+		# Check for constant declarations.
+		regex_match = public_const_regex.search(line)
+		if regex_match:
+			var constant_name = regex_match.get_string(1)
+			result.append(constant_name)
+			continue
+		
+		# Check for signal definitions.
+		regex_match = signal_regex.search(line)
+		if regex_match:
+			var signal_name = regex_match.get_string(1)
+			result.append(signal_name)
+			continue
+		
+		# Check for enum definitions.
+		regex_match = enum_regex.search(line)
+		if regex_match:
+			var enum_name = regex_match.get_string(1).strip_edges()
+			if enum_name != "":
+				result.append(enum_name) # Store the enum name if it exists
+
+			# Check for inline elements
+			if "{" in line:
+				var enum_parts = line.split("{")[1].split(",")
+				if len(enum_parts) > 1:
+					# Handle one-line enums
+					for i in range(enum_parts.size()):
+						enum_parts[i] = remove_brackets_from_string(enum_parts[i]).strip_edges()
+					result.append_array(enum_parts)
+				else:
+					# Handle multi-line enums
+					var enum_elements = []
+					while not file.eof_reached():
+						var enum_line = file.get_line().strip_edges()
+						if enum_line == "}":
+							break
+						enum_elements.append(enum_line.split(",")[0].strip_edges().split("=")[0].strip_edges().split("#")[0].strip_edges())
+					result.append_array(enum_elements)
+			continue
+	
+	file.close()
+	return result
+
+
+func remove_brackets_from_string(str):
+	var left_brace_idx = str.find("{")
+	var right_brace_idx = str.find("}")
+
+	# Remove everything to the left of `{` (including it), if it exists
+	if left_brace_idx != -1:
+		str = str.substr(left_brace_idx + 1)
+
+	# Remove everything to the right of `}` (including it), if it exists
+	if right_brace_idx != -1:
+		str = str.substr(0, right_brace_idx)
+	return str
 
 
 func _export_end() -> void:
@@ -373,8 +517,8 @@ func _obfuscate_script(path : String) -> String:
 	obfuscator.run(_features)
 	
 	# Inject startup code into the first autoload
-	if path == _inject_autoload:
-		var injection_code : String = 'print("GDMaim - Source map \'' + _source_map_filename + '\'\\n");'
+	if _inject_source_map_name and path == _inject_autoload:
+		var injection_code : String = 'print("GDMaim - Source map \'' + _source_map_filename + '\'\");'
 		var did_inject : bool = false
 		
 		var found_func : bool = false

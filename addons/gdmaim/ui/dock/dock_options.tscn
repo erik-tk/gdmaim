@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b0utn0ipiju8s"]
 
-[ext_resource type="Script" path="res://addons/gdmaim/ui/dock/setting.gd" id="1_qv1ja"]
+[ext_resource type="Script" uid="uid://dadnkatknh43m" path="res://addons/gdmaim/addons/gdmaim/ui/dock/setting.gd" id="1_qv1ja"]
 
 [node name="OptionButton" type="OptionButton"]
 anchors_preset = 6

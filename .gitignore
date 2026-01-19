@@ -2,8 +2,11 @@
 *.import
 *.txt
 *_legacy*
-export.cfg
 project.godot
 export_presets.cfg
 test_scripts/
+cache/
+# export.cfg
+source_maps/
+
 *.uid

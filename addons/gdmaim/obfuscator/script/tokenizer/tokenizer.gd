@@ -23,6 +23,8 @@ var _can_be_nodepath : bool = true
 
 
 func read(source_code : String) -> void:
+	source_code = source_code.replace("\r\n", "\n")  # Normalize line endings
+
 	line_count = 1
 	_tokens.clear()
 	_idx = -1
