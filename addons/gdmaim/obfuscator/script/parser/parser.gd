@@ -14,6 +14,9 @@ var _symbol_table : SymbolTable
 var _class_symbol : SymbolTable.Symbol
 var _is_autoload : bool
 var _current_identation : int
+var _cached_exclusions : Array[String] = []
+static var _global_autoload_cache : Array[String] = []
+static var _has_loaded_autoloads : bool = false
 
 
 func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : SymbolTable.Symbol = null) -> AST.ASTNode:
@@ -22,6 +25,8 @@ func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : S
 	_class_symbol = autoload_symbol
 	_is_autoload = autoload_symbol != null
 	
+	_build_exclusion_cache()
+	
 	var ast := AST.Class.new(null)
 	ast.body = _parse_block(ast, -1)
 	
@@ -29,6 +34,37 @@ func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : S
 	_class_symbol = null
 	
 	return ast
+
+
+func _build_exclusion_cache() -> void:
+	_cached_exclusions.clear()
+	
+	# 1. Add standard excluded namespaces
+	if _symbol_table.settings.excluded_namespaces:
+		var namespaces = _symbol_table.settings.excluded_namespaces.split(",")
+		for ns in namespaces:
+			var clean = ns.strip_edges()
+			if not clean.is_empty():
+				_cached_exclusions.append(clean)
+
+	# 2. Add Autoloads
+	if _symbol_table.settings.lock_all_autoloads:
+		# Only load project.godot from disk if we haven't done it yet this session
+		if not _has_loaded_autoloads:
+			var cfg : ConfigFile = ConfigFile.new()
+			if cfg.load("res://project.godot") == OK:
+				if cfg.has_section("autoload"):
+					_global_autoload_cache.append_array(cfg.get_section_keys("autoload"))
+			_has_loaded_autoloads = true
+		
+		_cached_exclusions.append_array(_global_autoload_cache)
+		
+	elif _symbol_table.settings.lock_autoloads_list:
+		var autoloads = _symbol_table.settings.lock_autoloads_list.split(",")
+		for al in autoloads:
+			var clean = al.strip_edges()
+			if not clean.is_empty():
+				_cached_exclusions.append(clean)
 
 
 func _parse_block(parent : AST.ASTNode, identation : int) -> AST.Sequence:
@@ -120,14 +156,12 @@ func _parse_symbol_path(ast_node : AST.ASTNode) -> SymbolTable.SymbolPath:
 
 	path.is_call = _tokenizer.peek().is_punctuator("(")
 
-	var comma_separated_string : String = _symbol_table.settings.excluded_namespaces
-	var excluded_namespaces : Array = Array(comma_separated_string.split(",")).map(func(item): return item.strip_edges())
-	for prefix in excluded_namespaces:
-		var symbols = path.symbols # e.g. [object_name, func_name] from function call object_name.func_name()
-		if symbols[0]._to_string() == prefix: # check if function call starts with object_name to exclude
-			for symbol in symbols:
+	if not path.symbols.is_empty():
+		var root_name = path.symbols[0]._to_string()
+		
+		if root_name in _cached_exclusions:
+			for symbol in path.symbols:
 				_symbol_table.lock_symbol(symbol)
-			break
 	
 	return path
 

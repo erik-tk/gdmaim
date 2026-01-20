@@ -14,7 +14,6 @@ var symbol_prefix : String = "__"
 var symbol_characters : String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 var symbol_seed : int = 0
 var symbol_dynamic_seed : bool = false
-var symbol_config_seed_enabled : bool = true
 var symbol_config_path : String = ""
 var strip_comments : bool = true
 var strip_empty_lines : bool = true
@@ -24,7 +23,8 @@ var regex_filter_enabled : bool = true
 var regex_filter : String = ""
 var preprocessor_prefix : String = "##"
 var excluded_namespaces : String = ""
-var autoload_exclusion_list : String = ""
+var lock_all_autoloads : bool = false
+var lock_autoloads_list : String = ""
 var source_map_path : String = get_script().resource_path.get_base_dir() + "/source_maps"
 var source_map_max_files : int = 10
 var source_map_compress : bool = true
@@ -54,8 +54,9 @@ func _init() -> void:
 	add_entry("inline_enums", "inline_enums", "Inline Enums", "If true, replace enums with hardcoded values.").disabled = true
 	add_entry("preprocessor_prefix", "preprocessor_prefix", "Preprocessor Prefix", "Sets the prefix to use for preprocessor hints.")
 	add_entry("excluded_namespaces", "excluded_namespaces", "Excluded namespaces", "A list of namespaces or object names that should not be obfuscated.\nExample: If 'object_name' is added, neither 'object_name' nor its used properties like 'object_name.func1()' will be obfuscated.")
-	add_entry("autoload_exclusion_list", "autoload_exclusion_list", "AutoLoad Exclusion List", "A list of AutoLoads whose global elements (functions, variables, enums, constants, signals) should be excluded from obfuscation.")
-
+	add_entry("lock_all_autoloads", "lock_all_autoloads", "Lock All AutoLoads", "When enabled, all Project Singletons (AutoLoads) are automatically protected. Their global names and all internal members (functions, variables, etc.) will not be obfuscated.")
+	add_entry("lock_autoloads_list", "lock_autoloads_list", "Lock AutoLoads", "A comma-separated list of specific AutoLoad names to protect. Use this if you only want to keep certain Singletons readable. (This setting is ignored if 'Exclude All AutoLoads' is enabled).")	
+	
 	set_category("post_process", "Post Processing")
 	add_entry("strip_comments", "strip_comments", "Strip Comments", "If true, remove all comments.")
 	add_entry("strip_empty_lines", "strip_empty_lines", "Strip Empty Lines", "If true, remove all empty lines.")
@@ -70,8 +71,6 @@ func _init() -> void:
 	add_entry("symbol_target_length", "target_length", "Target Name Length", "Sets the name length, excluding prefix, which the obfuscator tries to target when generating names.")
 	add_entry("symbol_seed", "seed", "Seed", "Sets the seed to use to generate names. A seed will always generate the same name for a given symbol.\nNote: 'Use Dynamic Seed' overrides this setting.")
 	add_entry("symbol_dynamic_seed", "dynamic_seed", "Use Dynamic Seed", "If true, generate an unique seed on every export.\nNote: Overrides 'Seed'.\nNot recommended as it might negatively affect delta updates.")
-	add_entry("symbol_config_seed_enabled", "config_seed_enabled", "Use Seed From File", "Uses the seed from the config file. If the seed value does not exist, a new one is generated.")
-	add_entry("symbol_config_path", "config_path", "", "Enter File Path")
 	
 	set_category("source_mapping", "Source Mapping")
 	add_entry("source_map_path", "filepath", "Output Path", "Source maps will get saved to this path upon export.")
@@ -103,29 +102,16 @@ func serialize() -> void:
 	_write_entries()
 	if !DirAccess.dir_exists_absolute(_get_cfg_dir()):
 		DirAccess.make_dir_recursive_absolute(_get_cfg_dir())
-	_cfg.save(_get_cfg_dir() + "/export.cfg")
+	_cfg.save(_get_cfg_dir() + "gdmaim_export.cfg")
 
 
 func deserialize() -> void:
-	_cfg.load(_get_cfg_dir() + "/export.cfg")
+	_cfg.load(_get_cfg_dir() + "gdmaim_export.cfg")
 	_read_entries()
 
 
 func get_categories() -> Array[Category]:
 	return _categories
-
-
-func get_config_seed():
-	var value = _get_config_value("Obfuscator", "seed", "Unknown")
-	if not value:
-		print("GDMaim - Generating new obfuscator seed")
-		var random_seed = _get_random_seed()
-		value = _save_config_value("Obfuscator", "seed", random_seed)
-		if not value:
-			print("GDMaim - New seed saved to config")
-			value = 0
-	symbol_seed = value
-	return symbol_seed
 
 
 func _write_entries() -> void:
@@ -139,47 +125,9 @@ func _read_entries() -> void:
 
 
 func _get_cfg_dir() -> String:
-	return get_script().resource_path.get_base_dir()
-
-
-func _get_config_value(section: String, key: String, default: Variant = null):
-	var config = ConfigFile.new()
-	var config_path = symbol_config_path
-	var err = config.load(config_path)
-	if err == OK:
-		if config.has_section_key(section, key):
-			return config.get_value(section, key, default)
-		else:
-			print("GDMaim - Key (%s) does not exist in section (%s)" % [key, section])
-			return false
-	else:
-		print("GDMaim - Failed to load config file")
-		return false 
-
-
-func _save_config_value(section: String, key: String, value: Variant):
-	var config = ConfigFile.new()
-	var config_path = symbol_config_path
-	
-	var load_err = config.load(config_path)
-	if load_err != OK:
-		print("GDMaim - Failed to load config file for saving. Error code: %d" % load_err)
-		return false
-	
-	config.set_value(section, key, value)
-	var save_err = config.save(config_path)
-	if save_err == OK: 
-		return value 
-	else:
-		print("GDMaim - Key (%s) in section (%s) could not be saved to path (%s)" % [key, section, config_path])
-		return false 
-
-
-func _get_random_seed():
-	var rnd = RandomNumberGenerator.new()
-	rnd.randomize()
-	var random_seed = rnd.randi()
-	return random_seed
+	# We have moved the config to the specific game repo so that it can be shared among devs but not be visible in the publicly forked repo
+	return "res://"
+	# return get_script().resource_path.get_base_dir()
 
 
 class Category:

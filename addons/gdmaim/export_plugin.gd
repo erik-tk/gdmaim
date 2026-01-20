@@ -48,7 +48,7 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 		#_build_data_path(get_script().resource_path.get_base_dir() + "/cache")
 		push_warning("GDMaim: The project setting 'editor/export/convert_text_resources_to_binary' is enabled, but will be ignored during export.")
 	
-	if settings.symbol_seed == 0 and not (settings.symbol_dynamic_seed or settings.symbol_config_seed_enabled):
+	if settings.symbol_seed == 0 and not settings.symbol_dynamic_seed:
 		push_warning("GDMaim - The ID generation seed is still set to the default value of 0. Please choose another one.")
 	
 	var scripts : PackedStringArray = _get_files("res://", ".gd")
@@ -76,10 +76,13 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 	if !_inject_autoload:
 		push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
 	
-	if settings.autoload_exclusion_list:
-		var comma_separated_string : String = settings.autoload_exclusion_list
-		var autoload_exclusion_list : Array = Array(comma_separated_string.split(",")).map(func(item): return item.strip_edges())
-		for autoload in autoload_exclusion_list:
+	if settings.lock_autoloads_list or settings.lock_all_autoloads:
+		var autoloads_to_exclude: Array
+		if settings.lock_all_autoloads:
+			autoloads_to_exclude = _autoloads.values()
+		else:
+			autoloads_to_exclude = Array(settings.lock_autoloads_list.split(",")).map(func(item): return item.strip_edges())
+		for autoload in autoloads_to_exclude:
 			var file_path = _autoloads.keys()[_autoloads.values().find(autoload)]
 			if file_path.ends_with(".gd"):
 				var elm_names_to_lock = get_script_elements(file_path)

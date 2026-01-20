@@ -232,6 +232,63 @@ func _shuffle_toplevel() -> void:
 
 
 func _strip_code() -> void:
+	# 1. Merge multi-line statements (arrays, dictionaries, function calls)
+	var i : int = 0
+	# Get a direct reference to the output lines array
+	var lines_ref : Array = tokenizer.get_output_lines()
+	
+	while i < lines_ref.size():
+		var line : Tokenizer.Line = lines_ref[i]
+		
+		# Prevent merging if the line ends with a comment (code would become part of the comment)
+		var ends_with_comment : bool = !line.tokens.is_empty() and line.tokens.back().type == Token.Type.COMMENT
+		
+		# Calculate net bracket depth for the current line
+		var depth : int = 0
+		for token in line.tokens:
+			if token.is_punctuator():
+				if ["(", "[", "{"].has(token.get_value()):
+					depth += 1
+				elif [")", "]", "}"].has(token.get_value()):
+					depth -= 1
+		
+		# If depth > 0, the statement is incomplete; pull the next line up.
+		if depth > 0 and !ends_with_comment and i + 1 < lines_ref.size():
+			var next_line : Tokenizer.Line = lines_ref[i + 1]
+			
+			# Remove the LINE_BREAK from the current line
+			if !line.tokens.is_empty() and line.tokens.back().type == Token.Type.LINE_BREAK:
+				line.remove_token(line.tokens.size() - 1)
+			
+			# Append tokens from next line, inserting a safe space if needed
+			var is_first_token : bool = true
+			for token in next_line.tokens:
+				if token.type == Token.Type.IDENTATION:
+					continue
+				
+				if is_first_token:
+					if !line.tokens.is_empty():
+						var prev : Token = line.tokens.back()
+						# Types that stick together (Keywords, Symbols, Literals, Numbers, NodePaths)
+						var mask : int = Token.Type.SYMBOL | Token.Type.KEYWORD | Token.Type.LITERAL | Token.Type.NUMBER_LITERAL | Token.Type.STRING_LITERAL | Token.Type.NODE_PATH
+						
+						# If both the previous token and the new token are identifiers, add a space
+						if (prev.type & mask) and (token.type & mask):
+							line.add_token(Token.new(Token.Type.WHITESPACE, " ", -1, -1))
+					is_first_token = false
+					
+				line.add_token(token)
+			
+			# Delete the next line since we just absorbed it
+			tokenizer.remove_output_line(i + 1)
+			
+			# 'continue' forces us to re-evaluate the current line 'i'.
+			# This handles multi-line merges (e.g., array [ \n 1, \n 2 ]) recursively.
+			continue
+		
+		i += 1
+
+	# 2. Existing stripping logic (Comments, regex, empty lines)
 	var regex := RegEx.new()
 	if _Settings.current.regex_filter_enabled and _Settings.current.regex_filter:
 		regex.compile(_Settings.current.regex_filter)
@@ -241,24 +298,24 @@ func _strip_code() -> void:
 		var line : Tokenizer.Line = lines[l]
 		
 		if _Settings.current.strip_comments or _Settings.current.strip_extraneous_spacing:
-			for i in range(line.tokens.size() - 1, -1, -1):
-				var token : Token = line.tokens[i]
+			for t in range(line.tokens.size() - 1, -1, -1):
+				var token : Token = line.tokens[t]
 				
 				# Strip comments
 				if _Settings.current.strip_comments and token.type == Token.Type.COMMENT:
-					line.remove_token(i)
+					line.remove_token(t)
 					continue
 				
 				# Strip extraneous spacing
 				if _Settings.current.strip_extraneous_spacing:
-					if token.type == Token.Type.IDENTATION and (i == line.tokens.size()-1 or line.tokens[i+1].type == Token.Type.LINE_BREAK):
-						line.remove_token(i)
+					if token.type == Token.Type.IDENTATION and (t == line.tokens.size()-1 or line.tokens[t+1].type == Token.Type.LINE_BREAK):
+						line.remove_token(t)
 						continue
 					elif token.type == Token.Type.WHITESPACE:
-						var prev_type : int = line.tokens[i-1].type
-						var next_type : int = line.tokens[i+1].type if i+1 < line.tokens.size() else Token.Type.NONE
-						if i == 0 or prev_type == Token.Type.OPERATOR or prev_type == Token.Type.PUNCTUATOR or next_type == Token.Type.OPERATOR or next_type == Token.Type.PUNCTUATOR:
-							line.remove_token(i)
+						var prev_type : int = line.tokens[t-1].type
+						var next_type : int = line.tokens[t+1].type if t+1 < line.tokens.size() else Token.Type.NONE
+						if t == 0 or prev_type == Token.Type.OPERATOR or prev_type == Token.Type.PUNCTUATOR or next_type == Token.Type.OPERATOR or next_type == Token.Type.PUNCTUATOR:
+							line.remove_token(t)
 							continue
 		
 		# Strip empty lines
