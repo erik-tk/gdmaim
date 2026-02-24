@@ -22,9 +22,9 @@ var feature_filters : bool = true
 var regex_filter_enabled : bool = true
 var regex_filter : String = ""
 var preprocessor_prefix : String = "##"
-var excluded_namespaces : String = ""
+var excluded_namespaces : String = "GameLoader, window, cam_label"
 var lock_all_autoloads : bool = false
-var lock_autoloads_list : String = ""
+var lock_autoloads_list : String = "GameLoader"
 var source_map_path : String = get_script().resource_path.get_base_dir() + "/source_maps"
 var source_map_max_files : int = 10
 var source_map_compress : bool = true
@@ -85,6 +85,11 @@ func _init() -> void:
 	#add_entry("obfuscate_debug_only", "obfuscate_debug_only", "", "")
 	
 	deserialize()
+
+	# If the seed loaded from config is 0, generate a new random seed
+	if symbol_seed == 0:
+		symbol_seed = randi()
+		_cfg.set_value("id", "seed", symbol_seed)
 
 
 func set_category(cfg_region : String, visible_name : String) -> void:
