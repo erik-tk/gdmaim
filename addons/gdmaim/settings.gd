@@ -88,7 +88,7 @@ func _init() -> void:
 
 	# If the seed loaded from config is 0, generate a new random seed
 	if symbol_seed == 0:
-		symbol_seed = randi()
+		symbol_seed = randi() % 100_000_000
 		_cfg.set_value("id", "seed", symbol_seed)
 
 
