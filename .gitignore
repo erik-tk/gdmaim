@@ -8,3 +8,4 @@ test_scripts/
 cache/
 export.cfg
 source_maps/
+.DS_Store
