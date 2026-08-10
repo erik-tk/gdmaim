@@ -173,6 +173,7 @@ corner_radius_bottom_left = 2
 
 [node name="SourceMapViewer" type="Window"]
 handle_input_locally = false
+oversampling_override = 1.0
 title = "Source Map Viewer"
 initial_position = 1
 size = Vector2i(1800, 900)
@@ -210,10 +211,10 @@ grow_vertical = 2
 
 [node name="OpenFile" type="Button" parent="Panel/HBoxContainer"]
 layout_mode = 2
-theme_override_styles/focus = SubResource("StyleBoxEmpty_aq0q2")
-theme_override_styles/hover = SubResource("StyleBoxFlat_xmd2u")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_xmd2u")
 theme_override_styles/normal = SubResource("StyleBoxEmpty_aq0q2")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_xmd2u")
+theme_override_styles/hover = SubResource("StyleBoxFlat_xmd2u")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_aq0q2")
 text = "Open"
 
 [node name="MenuButton" type="MenuButton" parent="Panel/HBoxContainer"]
@@ -221,6 +222,7 @@ layout_mode = 2
 text = "Search"
 item_count = 2
 popup/item_0/text = "Search source code...    (CTRL + F)"
+popup/item_0/id = 0
 popup/item_1/text = "Search exported code...    (CTRL + F)"
 popup/item_1/id = 1
 
@@ -332,9 +334,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/current_line_color = Color(0.752941, 0, 0.0509804, 0.419608)
-theme_override_colors/font_readonly_color = Color(1, 1, 1, 1)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_readonly_color = Color(1, 1, 1, 1)
+theme_override_colors/current_line_color = Color(0.752941, 0, 0.0509804, 0.419608)
 theme_override_fonts/font = SubResource("SystemFont_g6j54")
 theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBoxFlat_syit6")
@@ -427,9 +429,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/current_line_color = Color(0.752941, 0, 0.0509804, 0.419608)
-theme_override_colors/font_readonly_color = Color(1, 1, 1, 1)
 theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_readonly_color = Color(1, 1, 1, 1)
+theme_override_colors/current_line_color = Color(0.752941, 0, 0.0509804, 0.419608)
 theme_override_fonts/font = SubResource("SystemFont_g6j54")
 theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("StyleBoxFlat_syit6")
@@ -457,9 +459,9 @@ code_edit = NodePath("../Control/ExportedCode")
 
 [node name="BottomDock" type="TabContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer"]
 layout_mode = 2
-theme_override_colors/font_unselected_color = Color(0.890196, 0.890196, 0.890196, 1)
-theme_override_colors/font_hovered_color = Color(1, 1, 1, 1)
 theme_override_colors/font_selected_color = Color(0.541176, 0.792157, 0.992157, 1)
+theme_override_colors/font_hovered_color = Color(1, 1, 1, 1)
+theme_override_colors/font_unselected_color = Color(0.890196, 0.890196, 0.890196, 1)
 theme_override_constants/outline_size = 0
 theme_override_styles/tab_focus = SubResource("StyleBoxEmpty_i2xq8")
 current_tab = 0
