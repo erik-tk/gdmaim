@@ -16,6 +16,7 @@ var _is_autoload : bool
 var _current_identation : int
 var _cached_exclusions : Array[String] = []
 var _lock_file : bool = false
+var _lock_all_members : bool = false
 static var _global_autoload_cache : Array[String] = []
 static var _has_loaded_autoloads : bool = false
 
@@ -26,12 +27,14 @@ func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : S
 	_class_symbol = autoload_symbol
 	_is_autoload = autoload_symbol != null
 	_lock_file = false # Reset for each file
+	_lock_all_members = false
 	
-	# Pre-scan for the KEEP_PUBLIC_API hint anywhere in the file
 	for line in _tokenizer.get_output_lines():
-		if line.has_hint(PreprocessorHints.KEEP_PUBLIC_API):
+		if line.has_hint(PreprocessorHints.KEEP_PUBLIC_MEMBERS) or line.has_hint(PreprocessorHints.KEEP_PUBLIC_API):
 			_lock_file = true
-			break
+		if line.has_hint(PreprocessorHints.KEEP_ALL_MEMBERS):
+			_lock_all_members = true
+			_lock_file = true # KEEP_ALL_MEMBERS implies KEEP_PUBLIC_MEMBERS
 	
 	_build_exclusion_cache()
 	
@@ -382,6 +385,7 @@ func _parse_class_name(parent : AST.ASTNode) -> void:
 	ast.symbol = _class_symbol
 	
 	_symbol_table.lock_symbol_name(token.get_value()) #NOTE class_name obfuscation currently disabled
+	_symbol_table.lock_symbol(_class_symbol) # class_name is created as a local symbol; remove it from the rename list
 	
 	token.link_symbol(ast.symbol)
 
@@ -439,7 +443,7 @@ func _parse_signal(parent : AST.ASTNode) -> AST.SignalDef:
 	
 	token.link_symbol(ast.symbol)
 	var is_public : bool = not ast.symbol.get_name().begins_with("_")
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and _current_identation == 0 and is_public):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	if _class_symbol and _is_autoload:
@@ -459,7 +463,7 @@ func _parse_enum(parent : AST.ASTNode) -> AST.EnumDef:
 	
 	token.link_symbol(ast.symbol)
 	var is_public : bool = not ast.symbol.get_name().begins_with("_")
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and _current_identation == 0 and is_public):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	var expect_key : bool = true
@@ -496,7 +500,7 @@ func _parse_enum_key(parent : AST.EnumDef) -> AST.EnumDef.KeyDef:
 	
 	token.link_symbol(key.symbol)
 	var is_public : bool = not key.symbol.get_name().begins_with("_")
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and is_public):
+	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and (is_public or _lock_all_members)):
 		_symbol_table.lock_symbol(key.symbol)
 	
 	parent.symbol.add_child(key.symbol)
@@ -522,7 +526,7 @@ func _parse_const(parent : AST.ASTNode) -> AST.Const:
 	
 	token.link_symbol(ast.symbol)
 	var is_public : bool = not ast.symbol.get_name().begins_with("_")
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and _current_identation == 0 and is_public):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	if _class_symbol:
@@ -544,7 +548,7 @@ func _parse_var(parent : AST.ASTNode) -> AST.Var:
 	
 	token.link_symbol(ast.symbol)
 	var is_public : bool = not ast.symbol.get_name().begins_with("_")
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and _current_identation == 0 and is_public):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	if _class_symbol and (_is_autoload or is_static):
@@ -564,7 +568,7 @@ func _parse_export_var(parent : AST.ASTNode) -> AST.ExportVar:
 	
 	token.link_symbol(ast.symbol)
 	var is_public : bool = not ast.symbol.get_name().begins_with("_")
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and _current_identation == 0 and is_public):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	if _class_symbol and _is_autoload:
@@ -585,7 +589,7 @@ func _parse_func(parent : AST.ASTNode) -> AST.Func:
 		is_static = _tokenizer.peek(-2).is_keyword("static")
 	
 	var is_public : bool = not name.begins_with("_")
-	var lock_symbols : bool = _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and _current_identation == 0 and is_public)
+	var lock_symbols : bool = _should_lock_member(name)
 	
 	var identation : int = _current_identation
 	var ast := AST.Func.new(parent)
@@ -713,3 +717,14 @@ func _is_call() -> bool:
 
 func _is_statement(token : Token) -> bool:
 	return token and token.type != Token.Type.COMMENT and token.type != Token.Type.WHITESPACE and token.type != Token.Type.IDENTATION and token.type != Token.Type.LINE_BREAK 
+
+
+## Whether a class-level member declared on the current line should keep its name.
+func _should_lock_member(name : String) -> bool:
+	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+		return true
+	if _current_identation != 0:
+		return false
+	if _lock_all_members:
+		return true
+	return _lock_file and not name.begins_with("_")

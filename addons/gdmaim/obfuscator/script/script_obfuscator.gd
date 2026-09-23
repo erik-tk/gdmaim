@@ -29,8 +29,20 @@ func parse(source_code : String, symbol_table : SymbolTable, autoload_symbol : S
 	_symbol_table = symbol_table
 	tokenizer = Tokenizer.new()
 	tokenizer.read(source_code)
+	_warn_deprecated_hints()
 	parser = Parser.new()
 	_ast = parser.read(tokenizer, symbol_table, autoload_symbol)
+
+
+func _warn_deprecated_hints() -> void:
+	var lines : Array[Tokenizer.Line] = tokenizer.get_output_lines()
+	for i in lines.size():
+		for hint : String in lines[i].hints:
+			if PreprocessorHints.DEPRECATED.has(hint):
+				var msg : String = "GDMaim - %s:%d: hint '%s' is deprecated, use '%s' instead." % [
+					path, i + 1, hint, PreprocessorHints.DEPRECATED[hint]]
+				push_warning(msg)
+				_Logger.write("WARNING: " + msg)
 
 
 func run(features : PackedStringArray) -> bool:
