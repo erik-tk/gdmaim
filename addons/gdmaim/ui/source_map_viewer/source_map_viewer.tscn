@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://dqknu058384tm"]
+[gd_scene format=3 uid="uid://dqknu058384tm"]
 
 [ext_resource type="Script" uid="uid://dlcpjwju262uf" path="res://addons/gdmaim/addons/gdmaim/ui/source_map_viewer/source_map_viewer.gd" id="1_xfxdk"]
 [ext_resource type="PackedScene" uid="uid://crvfxjbaqfxn2" path="res://addons/gdmaim/addons/gdmaim/ui/source_map_viewer/code_search.tscn" id="2_n0sd2"]
@@ -171,7 +171,7 @@ corner_radius_bottom_left = 2
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_e4wko"]
 
-[node name="SourceMapViewer" type="Window"]
+[node name="SourceMapViewer" type="Window" unique_id=1030876870]
 handle_input_locally = false
 oversampling_override = 1.0
 title = "Source Map Viewer"
@@ -182,7 +182,7 @@ theme_override_styles/embedded_border = SubResource("StyleBoxFlat_6bkrx")
 theme_override_styles/embedded_unfocused_border = SubResource("StyleBoxFlat_bdbcx")
 script = ExtResource("1_xfxdk")
 
-[node name="BG" type="Panel" parent="."]
+[node name="BG" type="Panel" parent="." unique_id=477804557]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -190,14 +190,14 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_s0j7j")
 
-[node name="Panel" type="Panel" parent="."]
+[node name="Panel" type="Panel" parent="." unique_id=1934333106]
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 25.0
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_ahkt6")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Panel"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel" unique_id=2021383466]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -209,7 +209,7 @@ offset_bottom = 3.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="OpenFile" type="Button" parent="Panel/HBoxContainer"]
+[node name="OpenFile" type="Button" parent="Panel/HBoxContainer" unique_id=419607769]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxEmpty_aq0q2")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_xmd2u")
@@ -217,7 +217,7 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_xmd2u")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_aq0q2")
 text = "Open"
 
-[node name="MenuButton" type="MenuButton" parent="Panel/HBoxContainer"]
+[node name="MenuButton" type="MenuButton" parent="Panel/HBoxContainer" unique_id=1014595023]
 layout_mode = 2
 text = "Search"
 item_count = 2
@@ -226,7 +226,7 @@ popup/item_0/id = 0
 popup/item_1/text = "Search exported code...    (CTRL + F)"
 popup/item_1/id = 1
 
-[node name="CurrentFile" type="Label" parent="Panel"]
+[node name="CurrentFile" type="Label" parent="Panel" unique_id=552567585]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -243,7 +243,7 @@ text = "GDMaim2024-01-26T16.20.00.gd.map"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HSplitContainer" type="HSplitContainer" parent="."]
+[node name="HSplitContainer" type="HSplitContainer" parent="." unique_id=1525271683]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -254,13 +254,14 @@ offset_bottom = -5.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 0
+split_offsets = PackedInt32Array(200)
 split_offset = 200
 
-[node name="Control" type="Control" parent="HSplitContainer"]
+[node name="Control" type="Control" parent="HSplitContainer" unique_id=716857407]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
-[node name="FileFilter" type="LineEdit" parent="HSplitContainer/Control"]
+[node name="FileFilter" type="LineEdit" parent="HSplitContainer/Control" unique_id=180179453]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -271,7 +272,7 @@ offset_bottom = 35.0
 grow_horizontal = 2
 placeholder_text = "Filter files"
 
-[node name="FileTree" type="Tree" parent="HSplitContainer/Control"]
+[node name="FileTree" type="Tree" parent="HSplitContainer/Control" unique_id=1220236999]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 1
@@ -285,26 +286,29 @@ offset_bottom = -2.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HSplitContainer" type="HSplitContainer" parent="HSplitContainer"]
+[node name="HSplitContainer" type="HSplitContainer" parent="HSplitContainer" unique_id=1658714453]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
+split_offsets = PackedInt32Array(1370)
 split_offset = 1370
 
-[node name="VSplitContainer" type="VSplitContainer" parent="HSplitContainer/HSplitContainer"]
+[node name="VSplitContainer" type="VSplitContainer" parent="HSplitContainer/HSplitContainer" unique_id=1033797028]
 layout_mode = 2
+split_offsets = PackedInt32Array(700)
 split_offset = 700
 
-[node name="Code" type="HSplitContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer"]
+[node name="Code" type="HSplitContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer" unique_id=561919213]
 custom_minimum_size = Vector2(100, 30)
 layout_mode = 2
 theme_override_constants/separation = 0
+split_offsets = PackedInt32Array(680)
 split_offset = 680
 
-[node name="Source" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code"]
+[node name="Source" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code" unique_id=2085987023]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
-[node name="VSplitContainer" type="VSplitContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source"]
+[node name="VSplitContainer" type="VSplitContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source" unique_id=1581807801]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -313,20 +317,20 @@ grow_horizontal = 2
 grow_vertical = 2
 dragger_visibility = 2
 
-[node name="Header" type="Label" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer"]
+[node name="Header" type="Label" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer" unique_id=1599165935]
 layout_mode = 2
 text = "Source Code"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer" unique_id=1553632007]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer/VBoxContainer"]
+[node name="Control" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer/VBoxContainer" unique_id=1241160411]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SourceCode" type="CodeEdit" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer/VBoxContainer/Control"]
+[node name="SourceCode" type="CodeEdit" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer/VBoxContainer/Control" unique_id=1738245580]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -389,17 +393,17 @@ line_folding = true
 gutters_draw_executing_lines = true
 gutters_draw_line_numbers = true
 
-[node name="SourceCodeSearch" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer/VBoxContainer" node_paths=PackedStringArray("code_edit") instance=ExtResource("2_n0sd2")]
+[node name="SourceCodeSearch" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Source/VSplitContainer/VBoxContainer" unique_id=358218296 node_paths=PackedStringArray("code_edit") instance=ExtResource("2_n0sd2")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 code_edit = NodePath("../Control/SourceCode")
 
-[node name="Exported" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code"]
+[node name="Exported" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code" unique_id=312833658]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
-[node name="VSplitContainer" type="VSplitContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported"]
+[node name="VSplitContainer" type="VSplitContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported" unique_id=867207299]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -408,20 +412,20 @@ grow_horizontal = 2
 grow_vertical = 2
 dragger_visibility = 2
 
-[node name="Header" type="Label" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer"]
+[node name="Header" type="Label" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer" unique_id=1780966900]
 layout_mode = 2
 text = "Exported Code"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer" unique_id=1617335772]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer/VBoxContainer"]
+[node name="Control" type="Control" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer/VBoxContainer" unique_id=249665965]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ExportedCode" type="CodeEdit" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer/VBoxContainer/Control"]
+[node name="ExportedCode" type="CodeEdit" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer/VBoxContainer/Control" unique_id=2128374240]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -451,13 +455,13 @@ line_folding = true
 gutters_draw_executing_lines = true
 gutters_draw_line_numbers = true
 
-[node name="ExportedCodeSearch" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer/VBoxContainer" node_paths=PackedStringArray("code_edit") instance=ExtResource("2_n0sd2")]
+[node name="ExportedCodeSearch" parent="HSplitContainer/HSplitContainer/VSplitContainer/Code/Exported/VSplitContainer/VBoxContainer" unique_id=1487737237 node_paths=PackedStringArray("code_edit") instance=ExtResource("2_n0sd2")]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 code_edit = NodePath("../Control/ExportedCode")
 
-[node name="BottomDock" type="TabContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer"]
+[node name="BottomDock" type="TabContainer" parent="HSplitContainer/HSplitContainer/VSplitContainer" unique_id=1464962756]
 layout_mode = 2
 theme_override_colors/font_selected_color = Color(0.541176, 0.792157, 0.992157, 1)
 theme_override_colors/font_hovered_color = Color(1, 1, 1, 1)
@@ -466,7 +470,7 @@ theme_override_constants/outline_size = 0
 theme_override_styles/tab_focus = SubResource("StyleBoxEmpty_i2xq8")
 current_tab = 0
 
-[node name="Console" type="TextEdit" parent="HSplitContainer/HSplitContainer/VSplitContainer/BottomDock"]
+[node name="Console" type="TextEdit" parent="HSplitContainer/HSplitContainer/VSplitContainer/BottomDock" unique_id=1046353280]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 10)
 layout_mode = 2
@@ -476,20 +480,20 @@ theme_override_styles/read_only = SubResource("StyleBoxFlat_54gcf")
 text = "werqwe"
 editable = false
 drag_and_drop_selection_enabled = false
-virtual_keyboard_enabled = false
 middle_mouse_paste_enabled = false
+virtual_keyboard_enabled = false
 metadata/_tab_index = 0
 
-[node name="Search Results" type="Tree" parent="HSplitContainer/HSplitContainer/VSplitContainer/BottomDock"]
+[node name="Search Results" type="Tree" parent="HSplitContainer/HSplitContainer/VSplitContainer/BottomDock" unique_id=547144378]
 visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="Symbols" type="Control" parent="HSplitContainer/HSplitContainer"]
+[node name="Symbols" type="Control" parent="HSplitContainer/HSplitContainer" unique_id=1673924448]
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 
-[node name="SourceHeader" type="Label" parent="HSplitContainer/HSplitContainer/Symbols"]
+[node name="SourceHeader" type="Label" parent="HSplitContainer/HSplitContainer/Symbols" unique_id=597531317]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -499,7 +503,7 @@ text = "Source Symbols"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ExportHeader" type="Label" parent="HSplitContainer/HSplitContainer/Symbols"]
+[node name="ExportHeader" type="Label" parent="HSplitContainer/HSplitContainer/Symbols" unique_id=876805785]
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 0.5
@@ -511,7 +515,7 @@ text = "Exported Symbols"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="SourceSymbols" type="Tree" parent="HSplitContainer/HSplitContainer/Symbols"]
+[node name="SourceSymbols" type="Tree" parent="HSplitContainer/HSplitContainer/Symbols" unique_id=1190723518]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -523,7 +527,7 @@ grow_horizontal = 2
 grow_vertical = 2
 hide_root = true
 
-[node name="ExportSymbols" type="Tree" parent="HSplitContainer/HSplitContainer/Symbols"]
+[node name="ExportSymbols" type="Tree" parent="HSplitContainer/HSplitContainer/Symbols" unique_id=88589671]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = -1
@@ -536,18 +540,18 @@ grow_horizontal = 2
 grow_vertical = 2
 hide_root = true
 
-[node name="LineEdit" type="LineEdit" parent="."]
+[node name="LineEdit" type="LineEdit" parent="." unique_id=1047355520]
 visible = false
 offset_right = 67.0625
 offset_bottom = 31.0
 editable = false
 
-[node name="Button" type="Button" parent="."]
+[node name="Button" type="Button" parent="." unique_id=1909059812]
 visible = false
 offset_right = 8.0
 offset_bottom = 8.0
 
-[node name="FileDialog" type="FileDialog" parent="."]
+[node name="FileDialog" type="FileDialog" parent="." unique_id=2105016702]
 title = "Open a File"
 initial_position = 2
 size = Vector2i(900, 600)
