@@ -508,6 +508,10 @@ func _get_files(path : String, ext : String) -> PackedStringArray:
 	while dirs:
 		var dir : String = dirs.pop_front()
 		for sub_dir in DirAccess.get_directories_at(dir):
+			var sub_path := dir.path_join(sub_dir)
+			# Respect .gdignore like Godot does: never collect scripts/scenes from ignored folders
+			if FileAccess.file_exists(sub_path.path_join(".gdignore")):
+				continue
 			if !sub_dir.begins_with("."):
 				dirs.append(dir.path_join(sub_dir))
 		for file in DirAccess.get_files_at(dir):
