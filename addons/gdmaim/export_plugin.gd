@@ -31,6 +31,7 @@ var _res_obfuscators : Dictionary
 var _inject_autoload : String
 var _exported_script_count : int
 var _rgx : RegEx
+var _inject_source_map_name : bool
 var _godot_files : GodotFiles
 var _compiler
 var _compress_mode : int
@@ -87,7 +88,7 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 		#_build_data_path(get_script().resource_path.get_base_dir() + "/cache")
 		push_warning("GDMaim: The project setting 'editor/export/convert_text_resources_to_binary' is enabled, but will be ignored during export.")
 	
-	if settings.symbol_seed == 0 and !settings.symbol_dynamic_seed:
+	if settings.symbol_seed == 0 and not settings.symbol_dynamic_seed:
 		push_warning("GDMaim - The ID generation seed is still set to the default value of 0. Please choose another one.")
 	
 	var scripts : PackedStringArray = _get_files("res://", ".gd")
@@ -102,16 +103,19 @@ func _export_begin(features : PackedStringArray, is_debug : bool, path : String,
 	_binash = Binash.new(path)
 	
 	_inject_autoload = ""
-	if settings.source_map_inject_name:
-		var cfg : ConfigFile = ConfigFile.new()
-		cfg.load("res://project.godot")
-		for autoload : String in (cfg.get_section_keys("autoload") if cfg.has_section("autoload") else []):
-			_autoloads[cfg.get_value("autoload", autoload).replace("*", "")] = autoload
-			if !_inject_autoload and cfg.get_value("autoload", autoload).begins_with("*"):
-				_inject_autoload = cfg.get_value("autoload", autoload).replace("*", "")
-			_symbols.lock_symbol_name(autoload)
-		if !_inject_autoload:
-			push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
+	_inject_source_map_name = (
+		(is_debug and settings.source_map_inject_name_debug) 
+		or (not is_debug and settings.source_map_inject_name_release)
+	)
+	var cfg : ConfigFile = ConfigFile.new()
+	cfg.load("res://project.godot")
+	for autoload : String in (cfg.get_section_keys("autoload") if cfg.has_section("autoload") else []):
+		_autoloads[cfg.get_value("autoload", autoload).replace("*", "")] = autoload
+		if !_inject_autoload and cfg.get_value("autoload", autoload).begins_with("*"):
+			_inject_autoload = cfg.get_value("autoload", autoload).replace("*", "")
+		_symbols.lock_symbol_name(autoload)
+	if _inject_source_map_name and !_inject_autoload:
+		push_warning("GDMaim - No valid autoload found! GDMaim will not be able to print the source map filename to the console on the exported build.")
 	
 	# Gather built-in variant and global symbols
 	var builtins : Script = preload("builtins.gd")
@@ -532,8 +536,8 @@ func _obfuscate_script(path : String) -> String:
 	obfuscator.run(_features)
 	
 	# Inject startup code into the first autoload
-	if path == _inject_autoload:
-		var injection_code : String = 'print("GDMaim - Source map \'' + _source_map_filename + '\'\\n");'
+	if _inject_source_map_name and path == _inject_autoload:
+		var injection_code : String = 'print("GDMaim - Source map \'' + _source_map_filename + '\'\");'
 		var did_inject : bool = false
 		
 		var found_func : bool = false
@@ -611,6 +615,10 @@ static func _get_files(path : String, ext : String) -> PackedStringArray:
 	while dirs:
 		var dir : String = dirs.pop_front()
 		for sub_dir in DirAccess.get_directories_at(dir):
+			var sub_path := dir.path_join(sub_dir)
+			# Respect .gdignore like Godot does: never collect scripts/scenes from ignored folders
+			if FileAccess.file_exists(sub_path.path_join(".gdignore")):
+				continue
 			if !sub_dir.begins_with("."):
 				var new_dir : String = dir.path_join(sub_dir)
 				if FileAccess.file_exists(new_dir.path_join(".gdignore")):

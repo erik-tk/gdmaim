@@ -17,6 +17,9 @@ var _is_autoload : bool
 var _current_indentation : int
 var _bracket_lock : int = 0
 var _statement_break : bool = false
+var _cached_exclusions : Array[String] = []
+var _lock_file : bool = false
+var _lock_all_members : bool = false
 
 
 func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : SymbolTable.Symbol = null) -> AST.ASTNode:
@@ -24,6 +27,17 @@ func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : S
 	_symbol_table = symbol_table
 	_class_symbol = autoload_symbol
 	_is_autoload = autoload_symbol != null
+	_lock_file = false # Reset for each file
+	_lock_all_members = false
+	
+	for line in _tokenizer.get_output_lines():
+		if line.has_hint(PreprocessorHints.KEEP_PUBLIC_MEMBERS) or line.has_hint(PreprocessorHints.KEEP_PUBLIC_API):
+			_lock_file = true
+		if line.has_hint(PreprocessorHints.KEEP_ALL_MEMBERS):
+			_lock_all_members = true
+			_lock_file = true # KEEP_ALL_MEMBERS implies KEEP_PUBLIC_MEMBERS
+
+	_build_exclusion_cache()
 	
 	var ast := AST.Class.new(null)
 	ast.body = _parse_block(ast, -1)
@@ -31,6 +45,18 @@ func read(tokenizer : Tokenizer, symbol_table : SymbolTable, autoload_symbol : S
 	_symbol_table = null
 	
 	return ast
+
+
+func _build_exclusion_cache() -> void:
+	_cached_exclusions.clear()
+
+	# add standard excluded namespaces
+	if _symbol_table.settings.excluded_namespaces:
+		var namespaces = _symbol_table.settings.excluded_namespaces.split(",")
+		for ns in namespaces:
+			var clean = ns.strip_edges()
+			if not clean.is_empty():
+				_cached_exclusions.append(clean)
 
 
 func get_class_symbol() -> SymbolTable.Symbol:
@@ -241,6 +267,12 @@ func _parse_symbol_path(ast_node : AST.ASTNode) -> SymbolTable.SymbolPath:
 		break
 	
 	path.is_call = _tokenizer.peek().is_punctuator("(")
+
+	if not path.symbols.is_empty():
+		var root_name = path.symbols[0]._to_string()
+		if root_name in _cached_exclusions:
+			for symbol in path.symbols:
+				_symbol_table.lock_symbol(symbol)
 	
 	return path
 
@@ -415,7 +447,7 @@ func _parse_for(parent : AST.ASTNode) -> AST.For:
 	ast.body = _parse_block(ast, indentation)
 	
 	symbol_token.link_symbol(iterator.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or _lock_file:
 		_symbol_table.lock_symbol(iterator.symbol)
 	
 	return ast
@@ -474,7 +506,7 @@ func _parse_class(parent : AST.ASTNode) -> AST.Class:
 	
 	var name : String = token.get_value()
 	var indentation : int = _current_indentation
-	var lock_symbol : bool = _line_has_hint(PreprocessorHints.LOCK_SYMBOLS)
+	var lock_symbol : bool = _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or _lock_file
 	
 	if _tokenizer.peek().is_keyword("extends"):
 		_tokenizer.get_next()
@@ -504,7 +536,7 @@ func _parse_signal(parent : AST.ASTNode) -> AST.SignalDef:
 	ast.params = _parse_params(parent)
 	
 	token.link_symbol(ast.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	if _class_symbol and _is_autoload:
@@ -524,7 +556,7 @@ func _parse_enum(parent : AST.ASTNode) -> AST.EnumDef:
 		ast.symbol = _symbol_table.create_global_symbol(token.get_value())
 		
 		token.link_symbol(ast.symbol)
-		if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+		if _should_lock_member(ast.symbol.get_name()):
 			_symbol_table.lock_symbol(ast.symbol)
 	
 	var expect_key : bool = true
@@ -564,7 +596,8 @@ func _parse_enum_key(parent : AST.ASTNode) -> AST.EnumDef.KeyDef:
 	key.symbol = _symbol_table.create_global_symbol(token.get_value())
 	
 	token.link_symbol(key.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	var is_public : bool = not key.symbol.get_name().begins_with("_")
+	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or (_lock_file and (is_public or _lock_all_members)):
 		_symbol_table.lock_symbol(key.symbol)
 	
 	if parent is AST.SymbolDeclaration and parent.symbol:
@@ -594,7 +627,7 @@ func _parse_const(parent : AST.ASTNode) -> AST.Const:
 	ast.getset = _parse_var_getset(ast)
 	
 	token.link_symbol(ast.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	if _class_symbol:
@@ -615,7 +648,7 @@ func _parse_var(parent : AST.ASTNode) -> AST.Var:
 	ast.symbol = _symbol_table.create_symbol(ast, token.get_value(), _parse_var_type(ast))
 	
 	token.link_symbol(ast.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	ast.default = _parse_var_default(ast)
@@ -637,7 +670,7 @@ func _parse_export_var(parent : AST.ASTNode) -> AST.ExportVar:
 	ast.symbol = _symbol_table.create_export_symbol(token.get_value(), _parse_var_type(ast))
 	
 	token.link_symbol(ast.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	ast.default = _parse_var_default(ast)
@@ -667,7 +700,7 @@ func _parse_export_node_path_var(parent : AST.ASTNode) -> AST.ExportNodePathVar:
 	ast.symbol = _symbol_table.create_export_symbol(token.get_value(), _parse_var_type(ast))
 	
 	token.link_symbol(ast.symbol)
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _should_lock_member(ast.symbol.get_name()):
 		_symbol_table.lock_symbol(ast.symbol)
 	
 	ast.default = _parse_var_default(ast)
@@ -710,7 +743,6 @@ func _parse_func(parent : AST.ASTNode) -> AST.Func:
 	var token : Token = _tokenizer.peek()
 	var name : String = "@lambda"
 	var is_static : bool = false
-	var lock_symbols : bool = _line_has_hint(PreprocessorHints.LOCK_SYMBOLS)
 	var obfuscate_string_params : bool = _line_has_hint(PreprocessorHints.OBFUSCATE_STRING_PARAMETERS, -1)
 	var string_params : PackedStringArray = _line_get_hint_args(PreprocessorHints.OBFUSCATE_STRING_PARAMETERS, -1).split(" ", false)
 	if token.is_symbol():
@@ -718,6 +750,7 @@ func _parse_func(parent : AST.ASTNode) -> AST.Func:
 		name = token.get_value()
 		is_static = _tokenizer.peek(-2).is_keyword("static") if _tokenizer.peek(-2) else false
 	
+	var lock_symbols : bool = _should_lock_member(name)
 	var indentation : int = _current_indentation
 	var bracket_lock : int = _bracket_lock
 	
@@ -936,3 +969,14 @@ func _is_call() -> bool:
 
 func _is_statement(token : Token) -> bool:
 	return token and token.type != Token.Type.COMMENT and token.type != Token.Type.WHITESPACE and token.type != Token.Type.INDENTATION and token.type != Token.Type.LINE_BREAK 
+
+
+## Whether a class-level member declared on the current line should keep its name.
+func _should_lock_member(name : String) -> bool:
+	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+		return true
+	if _current_indentation != 0:
+		return false
+	if _lock_all_members:
+		return true
+	return _lock_file and not name.begins_with("_")

@@ -21,6 +21,7 @@ var symbol_prefix : String = "__"
 var symbol_characters : String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 var symbol_seed : int = 0
 var symbol_dynamic_seed : bool = false
+var symbol_config_path : String = ""
 var strip_comments : bool = true
 var strip_empty_lines : bool = true
 var strip_extraneous_spacing : bool = true
@@ -32,10 +33,12 @@ var feature_filters : bool = true
 var regex_filter_enabled : bool = true
 var regex_filter : String = ""
 var preprocessor_prefix : String = "##"
+var excluded_namespaces : String = "window, cam_label"
 var source_map_path : String = get_script().resource_path.get_base_dir() + "/source_maps"
 var source_map_max_files : int = 10
 var source_map_compress : bool = true
-var source_map_inject_name : bool = true
+var source_map_inject_name_debug : bool = true
+var source_map_inject_name_release : bool = false
 var debug_scripts : PackedStringArray
 var debug_resources : PackedStringArray
 var obfuscate_debug_only : bool = false
@@ -98,6 +101,7 @@ func initialize_settings(make_as_global_settings : bool = false, force_load_conf
 	add_entry("inline_constants", "inline_consts", "Inline Constants", "If true, replace constants with hardcoded values.\nNote: Only bool, int, float, Color, Vector(2/3/4)(i) and NodePath are supported.").disabled = true
 	add_entry("inline_enums", "inline_enums", "Inline Enums", "If true, replace enums with hardcoded values.").disabled = true
 	add_entry("preprocessor_prefix", "preprocessor_prefix", "Preprocessor Prefix", "Sets the prefix to use for preprocessor hints.")
+	add_entry("excluded_namespaces", "excluded_namespaces", "Excluded namespaces", "A list of namespaces or object names that should not be obfuscated.\nExample: If 'object_name' is added, neither 'object_name' nor its used properties like 'object_name.func1()' will be obfuscated.")
 	
 	set_category("post_process", "Post Processing")
 	add_entry("strip_comments", "strip_comments", "Strip Comments", "If true, remove all comments.")
@@ -124,7 +128,8 @@ func initialize_settings(make_as_global_settings : bool = false, force_load_conf
 	add_entry("source_map_path", "filepath", "Output Path", "Source maps will get saved to this path upon export.")
 	add_entry("source_map_max_files", "max_files", "Max Files", "Sets the maximum amount of source map files allowed.")
 	add_entry("source_map_compress", "compress", "Compress", "If true, source maps will be compressed upon export.")
-	add_entry("source_map_inject_name", "inject_name", "Inject Name", "If true, upon export, injects a print statement of the associated source map's filename into the first enabled autoload. This does not affect your source code. Makes selecting the right source map very easy, when a player/user reports an error and shares their logfile.")
+	add_entry("source_map_inject_name_debug", "inject_name_debug", "Inject Name (Debug)", "If true, inject a print statement with the source map filename into the first enabled autoload on debug builds.")
+	add_entry("source_map_inject_name_release", "inject_name_release", "Inject Name (Release)", "If true, inject a print statement with the source map filename into the first enabled autoload on release builds.")
 	
 	set_category("exclude_files_category", "Exclusion")
 	add_entry("_exclude_files", "multi_filepath", "Path", "Select files or folders to be excluded from obfuscation; excluded scripts will maintain compatibility with the other obfuscated scripts.").set_custom_type(Entry.CustomType.MULTI_FILE_PATH, "")
@@ -140,6 +145,11 @@ func initialize_settings(make_as_global_settings : bool = false, force_load_conf
 	deserialize()
 	
 	_initialized = true
+
+	# If the seed loaded from config is 0, generate a new random seed
+	if symbol_seed == 0:
+		symbol_seed = randi() % 100_000_000
+		_cfg.set_value("id", "seed", symbol_seed)
 
 
 func set_category(cfg_region : String, visible_name : String) -> void:
