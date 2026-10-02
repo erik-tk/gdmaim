@@ -479,7 +479,7 @@ func _parse_class_name(parent : AST.ASTNode) -> void:
 	
 	token.link_symbol(ast.symbol)
 	
-	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS):
+	if _line_has_hint(PreprocessorHints.LOCK_SYMBOLS) or _lock_file:
 		_symbol_table.lock_symbol(ast.symbol)
 
 
