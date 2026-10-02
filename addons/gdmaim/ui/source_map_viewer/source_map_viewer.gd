@@ -17,7 +17,7 @@ var _prev_theme : Theme
 
 var _tool : EditorPlugin
 
-@onready var current_file : Label = $Panel/CurrentFile
+@onready var current_file : Label = %CurrentFile
 @onready var console : TextEdit = %Console
 @onready var file_tree : Tree = %FileTree
 @onready var source_code : TextEdit = %SourceCode
@@ -59,7 +59,7 @@ func _ready() -> void:
 	visibility_changed.connect(_on_visibility_changed)
 	theme_changed.connect(_setup_syntax_highlighter)
 	
-	var popup : PopupMenu = $Panel/HBoxContainer/MenuButton.get_popup()
+	var popup : PopupMenu = %MenuButton.get_popup()
 	popup.index_pressed.connect(_on_search_option_selected)
 
 
