@@ -1,11 +1,16 @@
 @tool
 extends Panel
 
-
 @export var code_edit : CodeEdit
 
 var _search_results : Array[Vector2i]
 var _cur_search_result : int = 0
+
+
+func _ready() -> void:
+	if _should_use_editor_icons():
+		_update_icons()
+		theme_changed.connect(_update_icons)
 
 
 func is_search_focused() -> bool:
@@ -80,3 +85,19 @@ func _on_previous_pressed() -> void:
 func _on_next_pressed() -> void:
 	_cur_search_result += 1
 	_update_matches()
+
+
+func _should_use_editor_icons() -> bool:
+	# Only in the editor, and not while editing code_search.tscn itself
+	# (otherwise the icons get baked into the scene file on save).
+	return Engine.is_editor_hint() and get_tree().edited_scene_root != self
+
+
+func _update_icons() -> void:
+	var theme : Theme = EditorInterface.get_editor_theme()
+	$VBoxContainer/Previous.icon = theme.get_icon("MoveUp", "EditorIcons")
+	$VBoxContainer/Next.icon = theme.get_icon("MoveDown", "EditorIcons")
+	$VBoxContainer/Close.icon = theme.get_icon("Close", "EditorIcons")
+	$VBoxContainer/Previous.text = ""
+	$VBoxContainer/Next.text = ""
+	$VBoxContainer/Close.text = ""
