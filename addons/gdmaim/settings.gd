@@ -11,12 +11,12 @@ enum ExportMode {
 }
 
 var obfuscation_enabled : bool = true
-var shuffle_top_level : bool = true
+var shuffle_top_level : bool = false
 var inline_constants : bool = true
 var inline_enums : bool = true
 var obfuscate_export_vars : bool = true
 var obfuscate_signals : bool = true
-var symbol_target_length : int = 30
+var symbol_target_length : int = 12
 var symbol_prefix : String = "__"
 var symbol_characters : String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 var symbol_seed : int = 0
