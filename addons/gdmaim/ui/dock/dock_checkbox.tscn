@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://nb5lkomvijrw"]
+[gd_scene format=3 uid="uid://nb5lkomvijrw"]
 
 [ext_resource type="Script" uid="uid://dadnkatknh43m" path="res://addons/gdmaim/addons/gdmaim/ui/dock/setting.gd" id="1_emcmu"]
 
-[node name="CheckBox" type="CheckBox"]
+[node name="CheckBox" type="CheckBox" unique_id=351127372]
 anchors_preset = 6
 anchor_left = 1.0
 anchor_top = 0.5

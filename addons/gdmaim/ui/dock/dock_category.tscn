@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://db3glsa3pdia3"]
 
-[node name="Category" type="Label"]
+[node name="Category" type="Label" unique_id=278622938]
 text = "Category"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="Panel" parent="." unique_id=1607754869]
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15

@@ -1,6 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://crvfxjbaqfxn2"]
+[gd_scene format=3 uid="uid://crvfxjbaqfxn2"]
 
-[ext_resource type="Script" uid="uid://dwnppq8aks4k3" path="res://addons/gdmaim/addons/gdmaim/ui/source_map_viewer/code_search.gd" id="1_4mnsc"]
+[ext_resource type="Script" uid="uid://bjgpfj6k2q4se" path="res://addons/gdmaim/addons/gdmaim/ui/source_map_viewer/code_search.gd" id="1_4mnsc"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_58b8g"]
 
@@ -12,11 +12,11 @@
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dylah"]
 
-[node name="CodeSearch" type="Panel"]
+[node name="CodeSearch" type="Panel" unique_id=984230450]
 custom_minimum_size = Vector2(0, 30)
 script = ExtResource("1_4mnsc")
 
-[node name="VBoxContainer" type="HBoxContainer" parent="."]
+[node name="VBoxContainer" type="HBoxContainer" parent="." unique_id=2141724425]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,41 +24,41 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Search" type="LineEdit" parent="VBoxContainer"]
+[node name="Search" type="LineEdit" parent="VBoxContainer" unique_id=289203077]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Matches" type="Label" parent="VBoxContainer"]
+[node name="Matches" type="Label" parent="VBoxContainer" unique_id=677718034]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 
-[node name="Previous" type="Button" parent="VBoxContainer"]
+[node name="Previous" type="Button" parent="VBoxContainer" unique_id=225926675]
 layout_mode = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_58b8g")
 text = "<"
 flat = true
 
-[node name="Next" type="Button" parent="VBoxContainer"]
+[node name="Next" type="Button" parent="VBoxContainer" unique_id=1780697491]
 layout_mode = 2
 theme_override_styles/focus = SubResource("StyleBoxEmpty_m7op6")
 text = ">"
 flat = true
 
-[node name="MatchCase" type="CheckBox" parent="VBoxContainer"]
+[node name="MatchCase" type="CheckBox" parent="VBoxContainer" unique_id=11928525]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 theme_override_styles/focus = SubResource("StyleBoxEmpty_jjfj5")
 text = "Match Case"
 flat = true
 
-[node name="WholeWords" type="CheckBox" parent="VBoxContainer"]
+[node name="WholeWords" type="CheckBox" parent="VBoxContainer" unique_id=1381419578]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 theme_override_styles/focus = SubResource("StyleBoxEmpty_7k12u")
 text = "Whole Words"
 flat = true
 
-[node name="Close" type="Button" parent="VBoxContainer"]
+[node name="Close" type="Button" parent="VBoxContainer" unique_id=823836256]
 layout_mode = 2
 size_flags_horizontal = 8
 theme_override_styles/focus = SubResource("StyleBoxEmpty_dylah")

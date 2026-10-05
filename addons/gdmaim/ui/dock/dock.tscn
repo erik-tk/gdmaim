@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://co43s08djflp5"]
+[gd_scene format=3 uid="uid://co43s08djflp5"]
 
-[ext_resource type="Script" uid="uid://doxnydtg584ry" path="res://addons/gdmaim/addons/gdmaim/ui/dock/dock.gd" id="1_se4hh"]
+[ext_resource type="Script" uid="uid://ct3k21mpra0j1" path="res://addons/gdmaim/addons/gdmaim/ui/dock/dock.gd" id="1_se4hh"]
 
-[node name="GDMaim" type="Panel"]
+[node name="GDMaim" type="Panel" unique_id=2108029828]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -10,7 +10,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_se4hh")
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1898179004]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,12 +22,12 @@ offset_bottom = -5.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=1010811464]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 6
 
-[node name="ViewSourceMap" type="Button" parent="ScrollContainer/VBoxContainer"]
+[node name="ViewSourceMap" type="Button" parent="ScrollContainer/VBoxContainer" unique_id=96743431]
 layout_mode = 2
 text = "View Source Maps"
 
