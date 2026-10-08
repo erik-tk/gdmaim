@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://bjtrd20uvj4uc"]
 
-[ext_resource type="Script" uid="uid://b3fymxwbuwqg" path="res://addons/gdmaim/addons/gdmaim/ui/dock/setting_multifile.gd" id="1_7ba2y"]
+[ext_resource type="Script" uid="uid://de4rbqkg17ca6" path="res://addons/gdmaim/addons/gdmaim/ui/dock/setting_multifile.gd" id="1_7ba2y"]
 
 [node name="DockMultiFilepath" type="HBoxContainer" unique_id=91181815]
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -270.0
-offset_bottom = 65.0
+offset_left = -163.0
+offset_bottom = 31.0
 size_flags_horizontal = 10
 script = ExtResource("1_7ba2y")
 node_var = "files"
