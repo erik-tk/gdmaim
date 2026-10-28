@@ -28,6 +28,10 @@ var idx : int
 var line : int
 var decorator : String
 var symbol : SymbolTable.Symbol
+## 0-based line in the original source where this token starts, -1 for tokens
+## inserted by the obfuscator. Unlike `line`, this stays correct when the tokenizer
+## joins several source lines into one output line (multi-line enums, arrays, ...).
+var src_line : int = -1
 
 var _value := StringRef.new()
 

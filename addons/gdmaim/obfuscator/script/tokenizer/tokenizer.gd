@@ -16,6 +16,9 @@ const IDENTIFIER_CHARACTERS : String = "1234567890_"
 static var _pregex : RegEx = null
 
 var line_count : int
+## Number of lines in the source code. line_count can be lower than this, because
+## newlines swallowed by sequence/continuation joining don't create output lines.
+var source_line_count : int
 
 var _stream : Stream
 var _tokens : Array[Token]
@@ -40,6 +43,7 @@ func read(source_code : String) -> void:
 	
 	_read_preprocessor(source_code)
 	
+	source_line_count = source_code.count("\n") + 1
 	_stream = Stream.new(source_code)
 	while _read_next_token(): pass
 
@@ -648,6 +652,8 @@ func _is_literal(token : String) -> bool:
 
 func _add_token(type : Token.Type, value : String, readable : bool = true, deco : String = "") -> void:
 	var token := Token.new(type, value, _tokens.size(), _output.size()-1, deco)
+	# The token's text has already been consumed, so step back over any newlines in it
+	token.src_line = _stream._line - 1 - value.count("\n")
 	_output.back().add_token(token)
 	if readable:
 		_tokens.append(token)

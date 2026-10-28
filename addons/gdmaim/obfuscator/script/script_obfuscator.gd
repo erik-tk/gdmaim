@@ -85,6 +85,11 @@ func generate_source_code() -> String:
 	return generated_code
 
 
+# Maps source lines to exported lines and back, using each token's own source line.
+# The old version used Token.line, which is the tokenizer's output line index. That
+# falls behind the real source line every time the tokenizer joins lines (e.g. a
+# multi-line enum becomes one line), so everything after such a block mapped to
+# lines that were too early.
 func generate_line_mappings() -> Array[Dictionary]:
 	var mappings_in : Dictionary
 	var mappings_out : Dictionary
@@ -93,44 +98,36 @@ func generate_line_mappings() -> Array[Dictionary]:
 	var out_line : int = 0
 	
 	for line in output_lines:
-		var src_line : int = -1
-		
-		# Find the block's starting line from the first valid token.
 		for token in line.tokens:
-			if token.line != -1:
-				src_line = token.line
-				break
-		
-		# Skip empty padding lines added by the tokenizer
-		if src_line == -1 and line.tokens.is_empty():
-			continue
+			var parts : PackedStringArray = token.get_value().split("\n")
 			
-		for token in line.tokens:
-			var text : String = token.get_value()
-			var lines_in_token : PackedStringArray = text.split("\n")
+			if token.src_line >= 0:
+				for k in parts.size():
+					# The empty piece after a trailing newline belongs to whatever follows
+					if k > 0 and k == parts.size() - 1 and parts[k].is_empty():
+						break
+					var s : int = token.src_line + k
+					var o : int = out_line + k
+					# First token wins, so a line maps to where it (or its block) starts
+					if !mappings_in.has(s):
+						mappings_in[s] = o
+					if !mappings_out.has(o):
+						mappings_out[o] = s
 			
-			# Map every internal line of the token 1:1
-			for nl_idx in lines_in_token.size():
-				var current_s = src_line + nl_idx
-				var current_o = out_line + nl_idx
-				
-				if not mappings_in.has(current_s):
-					mappings_in[current_s] = current_o
-				
-				mappings_out[current_o] = current_s
-			
-			# Advance the trackers by the number of newlines INSIDE this specific token
-			out_line += lines_in_token.size() - 1
-			src_line += lines_in_token.size() - 1
-
-	mappings_in[tokenizer.line_count-1] = out_line
-	mappings_out[out_line] = tokenizer.line_count-1
+			out_line += parts.size() - 1
 	
+	var last_source_line : int = tokenizer.source_line_count - 1
+	if !mappings_in.has(last_source_line):
+		mappings_in[last_source_line] = out_line
+	if !mappings_out.has(out_line):
+		mappings_out[out_line] = last_source_line
+	
+	# Source lines without tokens (removed comments, blank lines) follow the line before
 	var last_valid : int = 0
-	for i in tokenizer.line_count:
-		var from : int = mappings_in.get(i, -1)
-		if from != -1:
-			last_valid = from
+	for i in tokenizer.source_line_count:
+		var to : int = mappings_in.get(i, -1)
+		if to != -1:
+			last_valid = to
 		else:
 			mappings_in[i] = last_valid
 	
