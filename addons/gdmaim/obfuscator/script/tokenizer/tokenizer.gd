@@ -466,7 +466,8 @@ func _read_multi_string() -> void:
 	
 	for x : int in range(_tokens.size() - 1, -1, -1):
 		var tkn : Token = _tokens[x]
-		if tkn.is_indentation() or tkn.is_line_break():
+		# A newline inside brackets that wasn't joined is kept as a "\n" punctuator, not a line break
+		if tkn.is_indentation() or tkn.is_line_break() or tkn.is_punctuator("\n"):
 			continue
 		elif tkn.is_operator() or tkn.is_symbol("var"):
 			comment = false
