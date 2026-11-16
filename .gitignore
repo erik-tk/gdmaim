@@ -6,7 +6,6 @@
 project.godot
 export_presets.cfg
 test_scripts/
-*.uid
 cache/
 export.cfg
 source_maps/
